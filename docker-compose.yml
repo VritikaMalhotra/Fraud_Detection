@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: fraud
     ports:
-      - "5432:5432"
+      - "${PG_PORT:-5543}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
@@ -16,7 +16,7 @@ services:
     image: redis:7-alpine
     container_name: fp-redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6380}:6379"
     restart: unless-stopped
 
   kafka:
@@ -24,8 +24,7 @@ services:
     container_name: fp-kafka
     hostname: kafka
     ports:
-      - "9092:9092"
-      - "9094:9094"
+      - "${KAFKA_OUTSIDE_PORT:-9094}:9094"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
