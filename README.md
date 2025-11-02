@@ -22,7 +22,7 @@ Real-time fraud detection system built using Redis and Kafka for high-speed even
 
 ```bash
 # Clone the repository (only once)
-git clone https://github.com/your-team/fraud-detection-system.git
+git clone https://github.com/VritikaMalhotra/Fraud_Detection.git
 
 # Move into the project folder
 cd Fraud_Detection
