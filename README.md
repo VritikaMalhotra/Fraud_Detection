@@ -2,41 +2,6 @@
 
 Real-time fraud detection system built using Redis and Kafka for high-speed event streaming and in-memory analysis. Deployed on AWS using Docker and Kubernetes for scalability and fault tolerance, enabling instant anomaly detection and automated risk alerts across transactions.
 
----
-
-## ⚙️ Overview
-
-| Component | Description |
-|------------|-------------|
-| **Ingest API** | Receives incoming transactions, assigns unique IDs, checks Redis to prevent duplicates, and sends them into Kafka (`payments.events`). |
-| **Kafka** | Acts as the conveyor belt — streams transactions between microservices in real time. |
-| **Redis** | Stores transaction IDs temporarily (48h) to prevent duplicate processing. |
-| **PostgreSQL** | Database for storing final fraud decisions (used in later stages). |
-| **Docker Compose** | Simplifies running all services locally with isolated ports. |
-
----
-
-## Setup Guide
-
-### 1️⃣ Repository Setup
-
-```bash
-# Clone the repository (only once)
-git clone https://github.com/VritikaMalhotra/Fraud_Detection.git
-
-# Move into the project folder
-cd Fraud_Detection
-
-# Fetch and switch to Renuka's branch
-git fetch origin renuka
-git checkout renuka
-# Fraud Detection System (Level 3 Complete)
-
-Real-time fraud-detection system built with Kafka, Redis, and Spring Boot microservices.
-It performs stream-based transaction analysis, applies rule-driven scoring, and issues instant Allow / Review / Block decisions, storing results in PostgreSQL.
-
----
-
 ## ⚙️ Architecture Overview
 
 Component | Description
