@@ -85,4 +85,122 @@ public class RedisState {
                         Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
+
+    // ─── Level 4: Spend Spike Detection ───────────────────────────────────
+
+    /**
+     * Store transaction amount in a Redis LIST (last N amounts per user)
+     * @param userId user identifier
+     * @param amount transaction amount
+     * @param maxSize maximum number of amounts to keep (e.g., 10)
+     */
+    public void recordAmount(String userId, double amount, int maxSize) {
+        String key = "user:%s:amounts".formatted(userId);
+        redis.opsForList().leftPush(key, String.valueOf(amount));
+        redis.opsForList().trim(key, 0, maxSize - 1); // Keep only last N
+        redis.expire(key, 90, TimeUnit.DAYS);
+    }
+
+    /**
+     * Get median of last N transaction amounts for spend spike detection
+     * @param userId user identifier
+     * @return median amount, or 0 if no history
+     */
+    public double getMedianAmount(String userId) {
+        String key = "user:%s:amounts".formatted(userId);
+        var amounts = redis.opsForList().range(key, 0, -1);
+        if (amounts == null || amounts.isEmpty()) {
+            return 0.0;
+        }
+
+        var nums = amounts.stream()
+                .map(s -> {
+                    try { return Double.parseDouble(s); }
+                    catch (Exception e) { return 0.0; }
+                })
+                .sorted()
+                .toList();
+
+        int size = nums.size();
+        if (size % 2 == 0) {
+            return (nums.get(size/2 - 1) + nums.get(size/2)) / 2.0;
+        } else {
+            return nums.get(size/2);
+        }
+    }
+
+    // ─── Level 4: Time-Based Device/IP Freshness ──────────────────────────
+
+    /**
+     * Record device with timestamp for freshness tracking
+     * @param userId user identifier
+     * @param deviceId device identifier
+     * @param epochSec current timestamp
+     * @return true if device was first-seen (newly added)
+     */
+    public boolean recordDevice(String userId, String deviceId, long epochSec) {
+        if (deviceId == null || deviceId.isBlank())
+            return false;
+        String key = "user:%s:device_times".formatted(userId);
+        // Store device with timestamp as score
+        Double existingScore = redis.opsForZSet().score(key, deviceId);
+        redis.opsForZSet().add(key, deviceId, epochSec);
+        redis.expire(key, 90, TimeUnit.DAYS);
+        return existingScore == null; // true if newly added
+    }
+
+    /**
+     * Check if device was first seen within X days
+     * @param userId user identifier
+     * @param deviceId device identifier
+     * @param nowSec current timestamp
+     * @param withinDays number of days to check
+     * @return true if device first seen within X days
+     */
+    public boolean deviceSeenWithinDays(String userId, String deviceId, long nowSec, int withinDays) {
+        if (deviceId == null || deviceId.isBlank())
+            return false;
+        String key = "user:%s:device_times".formatted(userId);
+        Double firstSeenSec = redis.opsForZSet().score(key, deviceId);
+        if (firstSeenSec == null)
+            return false;
+        long daysSinceFirstSeen = (nowSec - firstSeenSec.longValue()) / 86400;
+        return daysSinceFirstSeen <= withinDays;
+    }
+
+    /**
+     * Record IP with timestamp for freshness tracking
+     * @param userId user identifier
+     * @param ip IP address
+     * @param epochSec current timestamp
+     * @return true if IP was first-seen (newly added)
+     */
+    public boolean recordIp(String userId, String ip, long epochSec) {
+        if (ip == null || ip.isBlank())
+            return false;
+        String key = "user:%s:ip_times".formatted(userId);
+        Double existingScore = redis.opsForZSet().score(key, ip);
+        redis.opsForZSet().add(key, ip, epochSec);
+        redis.expire(key, 90, TimeUnit.DAYS);
+        return existingScore == null; // true if newly added
+    }
+
+    /**
+     * Check if IP was first seen within X days
+     * @param userId user identifier
+     * @param ip IP address
+     * @param nowSec current timestamp
+     * @param withinDays number of days to check
+     * @return true if IP first seen within X days
+     */
+    public boolean ipSeenWithinDays(String userId, String ip, long nowSec, int withinDays) {
+        if (ip == null || ip.isBlank())
+            return false;
+        String key = "user:%s:ip_times".formatted(userId);
+        Double firstSeenSec = redis.opsForZSet().score(key, ip);
+        if (firstSeenSec == null)
+            return false;
+        long daysSinceFirstSeen = (nowSec - firstSeenSec.longValue()) / 86400;
+        return daysSinceFirstSeen <= withinDays;
+    }
 }
