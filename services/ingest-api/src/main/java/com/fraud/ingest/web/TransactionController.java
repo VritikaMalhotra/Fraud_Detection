@@ -1,6 +1,6 @@
 package com.fraud.ingest.web;
 
-import com.fraud.ingest.model.Transaction;
+import com.fraud.common.model.Transaction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
