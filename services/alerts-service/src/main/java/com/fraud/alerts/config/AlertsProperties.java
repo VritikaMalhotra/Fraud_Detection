@@ -8,7 +8,6 @@ import java.time.Duration;
 import java.util.Set;
 
 @Data
-@Component
 @ConfigurationProperties(prefix = "app.alerts")
 public class AlertsProperties {
 
