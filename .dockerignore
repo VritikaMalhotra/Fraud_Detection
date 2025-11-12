@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Build outputs
+target/
+*.jar
+*.war
+*.class
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Documentation
+*.md
+docs/
+
+# Test files
+test_services.py
+
+# Temporary files
+_ul/
+*.tmp
+*.bak
+
+# Operations
+ops/grafana/
+ops/prometheus/
