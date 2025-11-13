@@ -152,16 +152,18 @@ public class FraudProcessor {
     // Record current amount for future comparisons
     redisState.recordAmount(tx.getUserId(), tx.getAmount(), spendHistorySize);
 
-    // C) Device/IP freshness: treat "new within X days" as risky
+    // C) Device/IP freshness: treat "new" (first-time) as risky
+    // Only flag if device/IP is truly NEW (first time seeing it)
+    // Devices/IPs that were seen before (even if within 7 days) are considered known/trusted
     if (tx.getDevice() != null) {
       boolean isNewDevice = redisState.recordDevice(tx.getUserId(), tx.getDevice().getId(), nowSec);
-      if (isNewDevice || redisState.deviceSeenWithinDays(tx.getUserId(), tx.getDevice().getId(), nowSec, deviceNewWithinDays)) {
+      if (isNewDevice) {
         score += deviceScore;
         reasons.add("new_device");
       }
 
       boolean isNewIp = redisState.recordIp(tx.getUserId(), tx.getDevice().getIp(), nowSec);
-      if (isNewIp || redisState.ipSeenWithinDays(tx.getUserId(), tx.getDevice().getIp(), nowSec, ipNewWithinDays)) {
+      if (isNewIp) {
         score += ipScore;
         reasons.add("new_ip");
       }

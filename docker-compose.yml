@@ -98,6 +98,22 @@ services:
       - ./ops/grafana/dashboards:/var/lib/grafana/dashboards:ro
     restart: unless-stopped
 
+  ingest-api:
+    build:
+      context: .
+      dockerfile: services/ingest-api/Dockerfile
+    container_name: fp-ingest-api
+    depends_on:
+      - kafka
+      - redis
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    restart: unless-stopped
+
   fraud-service:
     build:
       context: .
@@ -105,14 +121,17 @@ services:
     container_name: fp-fraud-service
     depends_on:
       - postgres
+      - redis
       - kafka
     ports:
       - "8082:8082"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fraud
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      DB_URL: jdbc:postgresql://postgres:5432/fraud
+      DB_USER: postgres
+      DB_PASS: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     restart: unless-stopped
 
   alerts-service:
@@ -125,7 +144,7 @@ services:
     ports:
       - "8083:8083"
     environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     restart: unless-stopped
 
 volumes:

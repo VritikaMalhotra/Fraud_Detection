@@ -46,4 +46,14 @@ public interface DecisionRepo extends JpaRepository<DecisionEntity, String> {
 
     @Query("SELECT COALESCE(AVG(d.latencyMs),0) FROM DecisionEntity d WHERE d.decision = :decision")
     Double averageLatencyForDecision(@Param("decision") String decision);
+
+    // Count decisions by userId and decision type
+    long countByUserIdAndDecision(String userId, String decision);
+
+    // Get average score by userId
+    @Query("SELECT COALESCE(AVG(d.score),0) FROM DecisionEntity d WHERE d.userId = :userId")
+    Double averageScoreByUserId(@Param("userId") String userId);
+
+    // Get top N recent decisions for a user
+    List<DecisionEntity> findTop10ByUserIdOrderByEvaluatedAtDesc(String userId);
 }

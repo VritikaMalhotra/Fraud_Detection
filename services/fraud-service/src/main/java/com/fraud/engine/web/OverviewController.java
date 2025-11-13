@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,6 +22,7 @@ public class OverviewController {
     private final TransactionRepo transactionRepo;
 
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> overview() {
         long totalDecisions = decisionRepo.count();
         long allowCount = decisionRepo.countByDecision("ALLOW");

@@ -18,17 +18,18 @@ COPY services/alerts-service/src ./services/alerts-service/src
 
 # Build the application
 # First install parent POM, then common-models, then build alerts-service
-RUN mvn install -N -DskipTests
-RUN mvn install -pl libs/common-models -DskipTests
-RUN mvn package -pl services/alerts-service -DskipTests
+RUN mvn install -N -DskipTests && \
+    mvn install -pl libs/common-models -DskipTests && \
+    cd services/alerts-service && \
+    mvn clean package spring-boot:repackage -DskipTests
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Copy the built JAR from build stage
-COPY --from=build /app/services/alerts-service/target/alerts-service-0.0.1-SNAPSHOT.jar app.jar
+# Copy the built JAR from build stage (built from /app/services/alerts-service)
+COPY --from=build /app/services/alerts-service/target/*.jar app.jar
 
 # Expose port
 EXPOSE 8083
