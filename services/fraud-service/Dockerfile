@@ -8,8 +8,12 @@ COPY pom.xml ./
 COPY libs/common-models/pom.xml ./libs/common-models/
 COPY libs/common-models/src ./libs/common-models/src
 
-# Copy fraud-service
+# Copy all service pom.xml files (Maven needs them for the reactor build)
+COPY services/ingest-api/pom.xml ./services/ingest-api/
 COPY services/fraud-service/pom.xml ./services/fraud-service/
+COPY services/alerts-service/pom.xml ./services/alerts-service/
+
+# Copy only fraud-service source code
 COPY services/fraud-service/src ./services/fraud-service/src
 
 # Build the application
