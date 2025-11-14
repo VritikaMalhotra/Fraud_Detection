@@ -8,6 +8,9 @@ import com.fraud.engine.db.DecisionEntity;
 import com.fraud.engine.db.DecisionRepo;
 import com.fraud.engine.db.TransactionEntity;
 import com.fraud.engine.db.TransactionRepo;
+import com.fraud.engine.ml.FeatureExtractor;
+import com.fraud.engine.ml.MLFraudDetector;
+import com.fraud.engine.ml.TransactionFeatures;
 import com.fraud.engine.redis.RedisState;
 import com.fraud.engine.service.RuleEngine;
 import io.micrometer.core.instrument.Counter;
@@ -40,6 +43,8 @@ public class FraudProcessor {
   private final RedisState redisState;
   private final MeterRegistry meterRegistry;
   private final ObjectMapper objectMapper;
+  private final MLFraudDetector mlFraudDetector;
+  private final FeatureExtractor featureExtractor;
 
   @Value("${app.topics.out}")
   private String outTopic;
@@ -80,6 +85,13 @@ public class FraudProcessor {
 
   @Value("${app.rules.spend.historySize:10}")
   private int spendHistorySize;
+
+  // ML Configuration
+  @Value("${app.ml.weight:0.5}")
+  private double mlWeight;
+
+  @Value("${app.rules.weight:0.5}")
+  private double rulesWeight;
 
   private Timer decisionLatencyTimer;
   private Counter allowCounter;
@@ -187,7 +199,45 @@ public class FraudProcessor {
           tx.getUserId(), tx.getLocation().getLat(), tx.getLocation().getLon(), nowSec);
     }
 
-    double boundedScore = Math.min(score, 100);
+    // ─── ML Prediction Integration ──────────────────────────────────────────
+    double mlScore = 0.0;
+    if (mlFraudDetector.isEnabled()) {
+      try {
+        // Extract features for ML model
+        TransactionFeatures features = featureExtractor.extractFeatures(
+            tx, nowSec, score, reasons);
+        
+        // Get ML prediction
+        double mlProbability = mlFraudDetector.predictFraudProbability(features);
+        mlScore = mlFraudDetector.mlProbabilityToScore(mlProbability);
+        
+        // Add ML reason if significant
+        if (mlProbability > 0.5) {
+          reasons.add("ml_high_risk");
+        }
+        
+        log.debug("ML prediction for tx {}: probability={}, score={}", 
+            tx.getTransactionId(), mlProbability, mlScore);
+      } catch (Exception e) {
+        log.warn("ML prediction failed for transaction {}: {}", 
+            tx.getTransactionId(), e.getMessage());
+        // Continue with rule-based score only
+      }
+    }
+
+    // Combine rule-based and ML scores
+    double combinedScore;
+    if (mlFraudDetector.isEnabled() && mlScore > 0) {
+      // Weighted combination: rules + ML
+      combinedScore = (score * rulesWeight) + (mlScore * mlWeight);
+      log.debug("Combined score for tx {}: rule={}, ml={}, final={}", 
+          tx.getTransactionId(), score, mlScore, combinedScore);
+    } else {
+      // Fallback to rule-based only
+      combinedScore = score;
+    }
+
+    double boundedScore = Math.min(combinedScore, 100);
     String decisionStr = RuleEngine.toDecision(boundedScore);
 
     long latency = System.currentTimeMillis() - t0;

@@ -114,6 +114,19 @@ services:
       REDIS_PORT: 6379
     restart: unless-stopped
 
+  ml-service:
+    build:
+      context: .
+      dockerfile: services/ml-service/Dockerfile
+    container_name: fp-ml-service
+    ports:
+      - "8084:8084"
+    environment:
+      MODEL_PATH: /app/models/fraud_model_xgb.pkl
+      META_PATH: /app/models/model_meta.json
+      PORT: 8084
+    restart: unless-stopped
+
   fraud-service:
     build:
       context: .
@@ -123,6 +136,7 @@ services:
       - postgres
       - redis
       - kafka
+      - ml-service
     ports:
       - "8082:8082"
     environment:
@@ -132,6 +146,7 @@ services:
       DB_PASS: postgres
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      ML_SERVICE_URL: http://ml-service:8084
     restart: unless-stopped
 
   alerts-service:
