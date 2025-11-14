@@ -4,15 +4,20 @@ Real-time fraud detection system built using Redis and Kafka for high-speed even
 
 ## 🖥️ Analyst Console (React)
 
-A complementary analyst UI lives in `frontend/`. It visualises live KPIs, recent decisions, and alert queues using mocked data.
+A complementary analyst UI lives in `../frontend/`. It visualises live KPIs, recent decisions, alerts, and transactions using the running backend services.
 
 ```bash
-cd frontend
+# in a separate terminal
+cd ../frontend
 npm install
 npm run dev
 ```
 
-The dev server runs on [http://localhost:5173](http://localhost:5173). Update `src/services/fraudApi.js` to connect the widgets to real backend endpoints once they are available.
+The dev server runs on [http://localhost:5173](http://localhost:5173). Backend endpoints are proxied to:
+- `http://localhost:8082` (`fraud-service` REST APIs)
+- `http://localhost:8080` (`ingest-api` for transaction submissions)
+
+Override with `VITE_API_BASE` / `VITE_INGEST_BASE` environment variables if your services run elsewhere.
 
 ## ⚙️ Architecture Overview
 

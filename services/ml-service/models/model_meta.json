@@ -1,0 +1,23 @@
+{
+  "model_version": "fraud-xgb-v1-1762986950",
+  "features": [
+    "amount",
+    "hourOfDay",
+    "tx_count_60s",
+    "spend_deviation_ratio",
+    "required_speed_kmph",
+    "is_new_device",
+    "is_new_ip",
+    "rule_burst_60s",
+    "rule_spend_spike",
+    "rule_new_device",
+    "rule_new_ip",
+    "rule_geo_impossible",
+    "rule_odd_hour",
+    "rule_score",
+    "currency"
+  ],
+  "block_threshold": 0.45765289664268494,
+  "roc_auc": 0.8294707672277615,
+  "pr_auc": 0.47997802726407424
+}

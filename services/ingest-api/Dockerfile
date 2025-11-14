@@ -1,4 +1,4 @@
-# Multi-stage build for fraud-service
+# Multi-stage build for ingest-api
 FROM maven:3.9-eclipse-temurin-21 AS build
 
 WORKDIR /app
@@ -13,14 +13,14 @@ COPY services/ingest-api/pom.xml ./services/ingest-api/
 COPY services/fraud-service/pom.xml ./services/fraud-service/
 COPY services/alerts-service/pom.xml ./services/alerts-service/
 
-# Copy only fraud-service source code
-COPY services/fraud-service/src ./services/fraud-service/src
+# Copy only ingest-api source code
+COPY services/ingest-api/src ./services/ingest-api/src
 
 # Build the application
-# First install parent POM, then common-models, then build fraud-service
+# First install parent POM, then common-models, then build ingest-api
 RUN mvn install -N -DskipTests && \
     mvn install -pl libs/common-models -DskipTests && \
-    cd services/fraud-service && \
+    cd services/ingest-api && \
     mvn clean package spring-boot:repackage -DskipTests
 
 # Runtime stage
@@ -28,11 +28,12 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Copy the built JAR from build stage (built from /app/services/fraud-service)
-COPY --from=build /app/services/fraud-service/target/*.jar app.jar
+# Copy the built JAR from build stage
+COPY --from=build /app/services/ingest-api/target/*.jar app.jar
 
 # Expose port
-EXPOSE 8082
+EXPOSE 8080
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
