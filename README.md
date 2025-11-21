@@ -1,7 +1,7 @@
 # Fraud_Detection
 
-Forked from https://github.com/VritikaMalhotra/Fraud_Detection/tree/main
-Team project developed collaboratively as part of CMPE 272: Enterprise Software Platforms.
+- Forked from https://github.com/VritikaMalhotra/Fraud_Detection/tree/main
+- Team project developed collaboratively as part of CMPE 272: Enterprise Software Platforms.
 
 Real-time fraud detection system built using Redis and Kafka for high-speed event streaming and in-memory analysis. Deployed on AWS using Docker and Kubernetes for scalability and fault tolerance, enabling instant anomaly detection and automated risk alerts across transactions.
 
