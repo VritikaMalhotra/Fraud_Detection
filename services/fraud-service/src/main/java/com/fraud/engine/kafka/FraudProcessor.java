@@ -199,46 +199,58 @@ public class FraudProcessor {
           tx.getUserId(), tx.getLocation().getLat(), tx.getLocation().getLon(), nowSec);
     }
 
-    // ─── ML Prediction Integration ──────────────────────────────────────────
-    double mlScore = 0.0;
-    if (mlFraudDetector.isEnabled()) {
+    // ─── Decision Logic: Rule-based with ML for REVIEW zone ──────────────────
+    // Strategy:
+    // - Score 0-29: ALLOW (clear legitimate)
+    // - Score 60+: BLOCK (clear fraud)
+    // - Score 30-59: Use ML model to make final binary decision (ALLOW or BLOCK)
+
+    String decisionStr;
+    double finalScore = score;
+
+    // First, determine rule-based decision zone
+    String ruleDecision = RuleEngine.toDecision(score);
+
+    if ("REVIEW".equals(ruleDecision) && mlFraudDetector.isEnabled()) {
+      // Transaction is in REVIEW zone (30-59) - use ML for final decision
       try {
         // Extract features for ML model
         TransactionFeatures features = featureExtractor.extractFeatures(
             tx, nowSec, score, reasons);
-        
+
         // Get ML prediction
         double mlProbability = mlFraudDetector.predictFraudProbability(features);
-        mlScore = mlFraudDetector.mlProbabilityToScore(mlProbability);
-        
-        // Add ML reason if significant
+
+        // Use ML probability to make binary decision
+        // ML probability > 0.5 means fraud (BLOCK), otherwise ALLOW
         if (mlProbability > 0.5) {
-          reasons.add("ml_high_risk");
+          decisionStr = "BLOCK";
+          reasons.add("ml_flagged_as_fraud");
+          // Boost score to reflect ML decision
+          finalScore = 60 + (mlProbability * 40); // 60-100 range for BLOCK
+        } else {
+          decisionStr = "ALLOW";
+          reasons.add("ml_approved");
+          // Lower score to reflect ML decision
+          finalScore = mlProbability * 30; // 0-30 range for ALLOW
         }
-        
-        log.debug("ML prediction for tx {}: probability={}, score={}", 
-            tx.getTransactionId(), mlProbability, mlScore);
+
+        log.info("REVIEW zone transaction {} decided by ML: probability={}, decision={}",
+            tx.getTransactionId(), mlProbability, decisionStr);
       } catch (Exception e) {
-        log.warn("ML prediction failed for transaction {}: {}", 
+        log.warn("ML prediction failed for REVIEW transaction {}: {}. Keeping as REVIEW.",
             tx.getTransactionId(), e.getMessage());
-        // Continue with rule-based score only
+        // If ML fails, keep as REVIEW for manual review
+        decisionStr = "REVIEW";
+        finalScore = score;
       }
-    }
-
-    // Combine rule-based and ML scores
-    double combinedScore;
-    if (mlFraudDetector.isEnabled() && mlScore > 0) {
-      // Weighted combination: rules + ML
-      combinedScore = (score * rulesWeight) + (mlScore * mlWeight);
-      log.debug("Combined score for tx {}: rule={}, ml={}, final={}", 
-          tx.getTransactionId(), score, mlScore, combinedScore);
     } else {
-      // Fallback to rule-based only
-      combinedScore = score;
+      // Clear ALLOW or BLOCK based on rules - no ML needed
+      decisionStr = ruleDecision;
+      finalScore = score;
     }
 
-    double boundedScore = Math.min(combinedScore, 100);
-    String decisionStr = RuleEngine.toDecision(boundedScore);
+    double boundedScore = Math.min(finalScore, 100);
 
     long latency = System.currentTimeMillis() - t0;
     FraudDecision decision = FraudDecision.builder()
