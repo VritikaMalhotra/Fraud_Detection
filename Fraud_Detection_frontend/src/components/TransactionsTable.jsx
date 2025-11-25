@@ -7,8 +7,14 @@ const formatDate = (iso) =>
     new Date(iso)
   );
 
-const formatAmount = (amount, currency) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+const formatAmount = (amount, currency) => {
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  } catch (error) {
+    // Fallback for invalid currency codes (e.g., test data with "XX")
+    return `${currency} ${amount.toFixed(2)}`;
+  }
+};
 
 const headerDefs = [
   { key: 'id', label: 'Transaction' },

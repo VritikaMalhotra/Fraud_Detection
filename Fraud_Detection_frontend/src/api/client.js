@@ -1,5 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8082';
-const INGEST_BASE = import.meta.env.VITE_INGEST_BASE ?? 'http://localhost:8080';
+// Use relative URLs to leverage Vite proxy and avoid CORS issues
+const API_BASE = import.meta.env.VITE_API_BASE ?? '';
+const INGEST_BASE = import.meta.env.VITE_INGEST_BASE ?? '';
 
 const headers = {
   'Content-Type': 'application/json'

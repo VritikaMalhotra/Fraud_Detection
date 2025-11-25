@@ -12,11 +12,22 @@ const TransactionsPage = () => {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('ALL');
   const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const load = async () => {
-      const data = await fetchTransactions();
-      setTransactions(data);
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchTransactions();
+        setTransactions(data);
+      } catch (err) {
+        console.error('Failed to fetch transactions:', err);
+        setError(err.message || 'Failed to load transactions');
+      } finally {
+        setLoading(false);
+      }
     };
     load();
   }, []);
@@ -33,6 +44,32 @@ const TransactionsPage = () => {
       return passesFilter && matchesSearch;
     });
   }, [transactions, search, filter]);
+
+  if (loading) {
+    return (
+      <div className={styles.wrapper}>
+        <header className={styles.header}>
+          <div>
+            <h1>Transactions</h1>
+            <p>Loading transactions...</p>
+          </div>
+        </header>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.wrapper}>
+        <header className={styles.header}>
+          <div>
+            <h1>Transactions</h1>
+            <p style={{ color: 'red' }}>Error: {error}</p>
+          </div>
+        </header>
+      </div>
+    );
+  }
 
   return (
     <div className={`${styles.wrapper} ${selected ? styles.wrapperWithDrawer : ''}`}>

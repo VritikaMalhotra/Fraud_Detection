@@ -12,7 +12,16 @@ export default defineConfig({
       },
       '/transactions': {
         target: 'http://localhost:8080',
-        changeOrigin: true
+        changeOrigin: true,
+        // Bypass proxy for browser navigation (HTML requests)
+        // Only proxy actual API calls (JSON requests)
+        bypass: (req, res, options) => {
+          // If request accepts HTML (browser navigation), serve index.html instead
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html';
+          }
+          // Otherwise (API POST request), proxy to backend
+        }
       }
     }
   }
