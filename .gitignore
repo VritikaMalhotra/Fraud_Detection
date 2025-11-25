@@ -54,3 +54,10 @@ coverage/
 *.tmp
 *.bak
 
+# Test and analysis files
+test_transactions.json
+submit_test_transactions.sh
+analysis_results.txt
+retest_analysis.txt
+final_analysis.txt
+

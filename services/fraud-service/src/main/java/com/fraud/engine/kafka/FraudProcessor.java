@@ -146,14 +146,17 @@ public class FraudProcessor {
 
     // ---- Redis-based checks (Level 4: Configurable & Enhanced) ----
     long nowSec = Instant.now().getEpochSecond();
-    redisState.recordTransactionTime(tx.getUserId(), nowSec);
 
     // A) Burst: configurable window and count
+    // IMPORTANT: Check count BEFORE recording current transaction to avoid off-by-one error
     long burstCnt = redisState.recentCount(tx.getUserId(), nowSec, burstWindowSec);
     if (burstCnt >= burstCount) {
       score += burstScore;
       reasons.add("burst_%ds".formatted(burstWindowSec));
     }
+
+    // Now record this transaction time for future burst detection
+    redisState.recordTransactionTime(tx.getUserId(), nowSec);
 
     // B) Spend spike: compare to median of last N transactions
     double medianAmount = redisState.getMedianAmount(tx.getUserId());

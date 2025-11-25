@@ -27,9 +27,10 @@ public class RuleEngine {
   }
 
   // NEW: night-time review (example; parse tx timestamp hour)
+  // Increased from 20 to 40 to better catch night-time fraud
   try {
     int hour = java.time.ZonedDateTime.parse(tx.getTimestamp()).getHour();
-    if (hour >= 0 && hour <= 5) { score += 20; reasons.add("night_time"); }
+    if (hour >= 0 && hour <= 5) { score += 40; reasons.add("night_time"); }
   } catch (Exception ignored) { /* parsing issues are ok */ }
 
   return new Result(Math.min(score, 100), reasons);
